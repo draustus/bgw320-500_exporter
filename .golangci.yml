@@ -1,0 +1,20 @@
+version: "2"
+linters:
+  default: all
+  disable:
+    - cyclop
+    - depguard
+    - funlen
+    - gocognit
+    - goconst
+    - gocyclo
+    - nlreturn
+    - noinlineerr
+    - gomodguard
+    - maintidx
+    - mnd
+    - lll
+    - revive
+    - varnamelen
+    - wsl
+    - wsl_v5

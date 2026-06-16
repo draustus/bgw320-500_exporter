@@ -1,0 +1,16 @@
+# Compiled binaries
+bgw320-500_exporter
+bgw320-500_exporter.exe
+
+# Testing
+*.test
+*.out
+
+# IDEs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

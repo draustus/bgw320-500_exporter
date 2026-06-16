@@ -1,0 +1,312 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "bgw320-500-exporter",
+    "title": "BGW320-500 Exporter",
+    "tags": ["bgw320-500", "exporter", "bgw"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "templating": {
+      "list": []
+    },
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "#999999",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "type": "stat",
+        "title": "Exporter Up",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_up",
+            "legendFormat": "up",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "type": "stat",
+        "title": "Scrape Duration",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_scrape_duration_seconds",
+            "legendFormat": "scrape duration",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "type": "stat",
+        "title": "WAN Ethernet Line Up",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_broadband_ethernet_line_up",
+            "legendFormat": "line up",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 0,
+          "y": 5
+        }
+      },
+      {
+        "id": 4,
+        "type": "stat",
+        "title": "WAN Ethernet Speed",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_broadband_ethernet_speed_mbps",
+            "legendFormat": "speed",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Mbps"
+          }
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 6,
+          "y": 5
+        }
+      },
+      {
+        "id": 5,
+        "type": "stat",
+        "title": "Broadband MTU",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_broadband_mtu_bytes",
+            "legendFormat": "mtu",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 0,
+          "y": 10
+        }
+      },
+      {
+        "id": 6,
+        "type": "graph",
+        "title": "WAN IPv4 Traffic",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_broadband_ipv4_rx_bytes_total",
+            "legendFormat": "rx bytes",
+            "refId": "A"
+          },
+          {
+            "expr": "bgw_broadband_ipv4_tx_bytes_total",
+            "legendFormat": "tx bytes",
+            "refId": "B"
+          },
+          {
+            "expr": "bgw_broadband_ipv4_rx_packets_total",
+            "legendFormat": "rx packets",
+            "refId": "C"
+          },
+          {
+            "expr": "bgw_broadband_ipv4_tx_packets_total",
+            "legendFormat": "tx packets",
+            "refId": "D"
+          }
+        ],
+        "gridPos": {
+          "h": 10,
+          "w": 6,
+          "x": 6,
+          "y": 10
+        }
+      },
+      {
+        "id": 7,
+        "type": "graph",
+        "title": "WAN IPv4 Errors & Drops",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_broadband_ipv4_rx_errors_total",
+            "legendFormat": "rx errors",
+            "refId": "A"
+          },
+          {
+            "expr": "bgw_broadband_ipv4_tx_errors_total",
+            "legendFormat": "tx errors",
+            "refId": "B"
+          },
+          {
+            "expr": "bgw_broadband_ipv4_rx_drops_total",
+            "legendFormat": "rx drops",
+            "refId": "C"
+          },
+          {
+            "expr": "bgw_broadband_ipv4_tx_drops_total",
+            "legendFormat": "tx drops",
+            "refId": "D"
+          },
+          {
+            "expr": "bgw_broadband_ipv4_collisions_total",
+            "legendFormat": "collisions",
+            "refId": "E"
+          }
+        ],
+        "gridPos": {
+          "h": 10,
+          "w": 6,
+          "x": 0,
+          "y": 15
+        }
+      },
+      {
+        "id": 8,
+        "type": "graph",
+        "title": "LAN Interface Devices",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_lan_interface_active_devices",
+            "legendFormat": "active {{interface}}",
+            "refId": "A"
+          },
+          {
+            "expr": "bgw_lan_interface_inactive_devices",
+            "legendFormat": "inactive {{interface}}",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 10,
+          "w": 12,
+          "x": 0,
+          "y": 25
+        }
+      },
+      {
+        "id": 9,
+        "type": "graph",
+        "title": "Wi-Fi Radio Status & Power",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_wifi_radio_enabled",
+            "legendFormat": "enabled {{band}}",
+            "refId": "A"
+          },
+          {
+            "expr": "bgw_wifi_power_level_percent",
+            "legendFormat": "power {{band}}",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 10,
+          "w": 12,
+          "x": 0,
+          "y": 35
+        }
+      },
+      {
+        "id": 10,
+        "type": "table",
+        "title": "Broadband Info",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_broadband_info",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showHeader": true
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 45
+        }
+      },
+      {
+        "id": 11,
+        "type": "table",
+        "title": "LAN Info",
+        "datasource": null,
+        "targets": [
+          {
+            "expr": "bgw_lan_info",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showHeader": true
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 45
+        }
+      }
+    ]
+  },
+  "overwrite": false
+}
