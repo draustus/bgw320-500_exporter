@@ -36,7 +36,22 @@ func TestCollectorCollect(t *testing.T) {
 	defer server.Close()
 
 	// Create a new collector pointing to the mock server
-	collector := NewBGWCollector(server.URL, true, 2*time.Second)
+	collector := NewBGWCollector(server.URL, 2*time.Second)
+
+	ctx := t.Context()
+	collector.Start(ctx)
+
+	// Wait for the first scrape to complete
+	select {
+	case <-collector.firstBroadbandDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Timeout waiting for broadband scrape")
+	}
+	select {
+	case <-collector.firstLANDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Timeout waiting for LAN scrape")
+	}
 
 	// Registry
 	reg := prometheus.NewRegistry()

@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -101,21 +101,40 @@ type BGWCollector struct {
 	lanPortRxMulticastDesc *prometheus.Desc
 	lanPortRxDroppedDesc   *prometheus.Desc
 	lanPortRxErrorsDesc    *prometheus.Desc
+
+	// Cache & concurrency
+	mu             sync.RWMutex
+	broadbandStats *BroadbandStats
+	lanStats       *LANStats
+	broadbandErr   error
+	lanErr         error
+	broadbandDur   time.Duration
+	lanDur         time.Duration
+
+	// Signal channels for initial scrapes (used for testing synchronization)
+	firstBroadbandDone chan struct{}
+	firstLANDone       chan struct{}
 }
 
-func NewBGWCollector(gatewayURL string, insecureSkipVerify bool, timeout time.Duration) *BGWCollector {
-	tr := &http.Transport{
-		// #nosec G402: this exporter targets a local router with a self-signed certificate.
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
-	}
+func NewBGWCollector(gatewayURL string, timeout time.Duration) *BGWCollector {
 	client := &http.Client{
-		Transport: tr,
-		Timeout:   timeout,
+		Timeout: timeout,
 	}
 
 	return &BGWCollector{
 		gatewayURL: gatewayURL,
 		client:     client,
+
+		firstBroadbandDone: make(chan struct{}),
+		firstLANDone:       make(chan struct{}),
+
+		mu:             sync.RWMutex{},
+		broadbandStats: nil,
+		lanStats:       nil,
+		broadbandErr:   nil,
+		lanErr:         nil,
+		broadbandDur:   0,
+		lanDur:         0,
 
 		upDesc: prometheus.NewDesc(
 			"bgw_up",
@@ -537,55 +556,109 @@ func (c *BGWCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.lanPortRxErrorsDesc
 }
 
+func (c *BGWCollector) Start(ctx context.Context) {
+	// Broadband statistics loop: once per minute
+	go func() {
+		c.scrapeAndCacheBroadband(ctx)
+		close(c.firstBroadbandDone)
+
+		ticker := time.NewTicker(1 * time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				c.scrapeAndCacheBroadband(ctx)
+			}
+		}
+	}()
+
+	// LAN statistics loop: once per 5 minutes
+	go func() {
+		c.scrapeAndCacheLAN(ctx)
+		close(c.firstLANDone)
+
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				c.scrapeAndCacheLAN(ctx)
+			}
+		}
+	}()
+}
+
 func (c *BGWCollector) Collect(ch chan<- prometheus.Metric) {
-	start := time.Now()
+	c.mu.RLock()
+	bbStats := c.broadbandStats
+	bbErr := c.broadbandErr
+	bbDur := c.broadbandDur
 
-	type bbRes struct {
-		stats *BroadbandStats
-		err   error
-	}
+	lanStats := c.lanStats
+	lanErr := c.lanErr
+	lanDur := c.lanDur
+	c.mu.RUnlock()
 
-	type lanRes struct {
-		stats *LANStats
-		err   error
-	}
-
-	bbChan := make(chan bbRes, 1)
-	lanChan := make(chan lanRes, 1)
-
-	go func() {
-		stats, err := c.scrapeBroadband()
-		bbChan <- bbRes{stats, err}
-	}()
-
-	go func() {
-		stats, err := c.scrapeLAN()
-		lanChan <- lanRes{stats, err}
-	}()
-
-	bRes := <-bbChan
-	lRes := <-lanChan
-
-	duration := time.Since(start).Seconds()
+	duration := bbDur.Seconds() + lanDur.Seconds()
 	ch <- prometheus.MustNewConstMetric(c.scrapeDurationDesc, prometheus.GaugeValue, duration)
 
-	if bRes.err != nil || lRes.err != nil {
+	if bbErr != nil || lanErr != nil || bbStats == nil || lanStats == nil {
 		ch <- prometheus.MustNewConstMetric(c.upDesc, prometheus.GaugeValue, 0)
-		slog.Error("Error scraping BGW statistics",
-			"broadband_error", bRes.err,
-			"lan_error", lRes.err,
+		slog.Error("Error or missing cached BGW statistics",
+			"broadband_error", bbErr,
+			"lan_error", lanErr,
+			"broadband_stats_nil", bbStats == nil,
+			"lan_stats_nil", lanStats == nil,
 		)
 		return
 	}
 
 	ch <- prometheus.MustNewConstMetric(c.upDesc, prometheus.GaugeValue, 1)
 
-	c.collectBroadband(ch, bRes.stats)
-	c.collectLAN(ch, lRes.stats)
+	c.collectBroadband(ch, bbStats)
+	c.collectLAN(ch, lanStats)
 }
 
-func (c *BGWCollector) scrapeBroadband() (*BroadbandStats, error) {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, c.gatewayURL+"/cgi-bin/broadbandstatistics.ha", nil)
+func (c *BGWCollector) scrapeAndCacheBroadband(ctx context.Context) {
+	start := time.Now()
+	stats, err := c.scrapeBroadband(ctx)
+	dur := time.Since(start)
+
+	c.mu.Lock()
+	c.broadbandStats = stats
+	c.broadbandErr = err
+	c.broadbandDur = dur
+	c.mu.Unlock()
+
+	if err != nil {
+		slog.Error("Error scraping broadband statistics", "error", err)
+	}
+}
+
+func (c *BGWCollector) scrapeAndCacheLAN(ctx context.Context) {
+	start := time.Now()
+	stats, err := c.scrapeLAN(ctx)
+	dur := time.Since(start)
+
+	c.mu.Lock()
+	c.lanStats = stats
+	c.lanErr = err
+	c.lanDur = dur
+	c.mu.Unlock()
+
+	if err != nil {
+		slog.Error("Error scraping LAN statistics", "error", err)
+	}
+}
+
+func (c *BGWCollector) scrapeBroadband(ctx context.Context) (*BroadbandStats, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.gatewayURL+"/cgi-bin/broadbandstatistics.ha", nil)
 	if err != nil {
 		return nil, fmt.Errorf("create broadband request: %w", err)
 	}
@@ -599,8 +672,8 @@ func (c *BGWCollector) scrapeBroadband() (*BroadbandStats, error) {
 	return ParseBroadbandStats(resp.Body)
 }
 
-func (c *BGWCollector) scrapeLAN() (*LANStats, error) {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, c.gatewayURL+"/cgi-bin/lanstatistics.ha", nil)
+func (c *BGWCollector) scrapeLAN(ctx context.Context) (*LANStats, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.gatewayURL+"/cgi-bin/lanstatistics.ha", nil)
 	if err != nil {
 		return nil, fmt.Errorf("create LAN request: %w", err)
 	}
