@@ -6,7 +6,6 @@ A Prometheus metrics exporter written in Go for the AT&T BGW320-500 residential 
 
 - **Concurrent Scraping**: Fetches the Broadband and LAN statistics pages in parallel to minimize scrape duration.
 - **Robust Parsing**: Parses HTML directly without external scripting dependencies. Tested against real BGW320-500 firmware output.
-- **Insecure SSL Support**: Configurable option to ignore self-signed SSL/TLS certificate warnings (common with the router's local HTTPS address).
 - **Comprehensive Metrics**:
   - Broadband connection source, network type, status, and IP details.
   - Broadband Ethernet WAN state, duplex, and speed.
@@ -23,8 +22,7 @@ The exporter can be configured via command-line flags or environment variables:
 | Flag | Environment Variable | Default | Description |
 |------|----------------------|---------|-------------|
 | `--listen-address` | `LISTEN_ADDRESS` | `:9191` | The address the HTTP server listens on. |
-| `--gateway-url` | `GATEWAY_URL` | `https://192.168.1.254` | Base URL of the BGW320-500 gateway. |
-| `--insecure-skip-verify` | `INSECURE_SKIP_VERIFY` | `true` | Skip SSL certificate validation for the gateway. Intended for local router usage with self-signed certificates; do not enable on untrusted networks. |
+| `--gateway-url` | `GATEWAY_URL` | `http://192.168.1.254` | Base URL of the BGW320-500 gateway. |
 | `--scrape-timeout` | `SCRAPE_TIMEOUT` | `10s` | HTTP timeout when scraping the gateway. |
 
 ## How to Run
@@ -46,7 +44,7 @@ go build -o bgw320-500_exporter
 Start the exporter locally:
 
 ```bash
-./bgw320-500_exporter --gateway-url="https://192.168.1.254" --listen-address=":9191"
+./bgw320-500_exporter --gateway-url="http://192.168.1.254" --listen-address=":9191"
 ```
 
 Once running, the metrics will be available at [http://localhost:9191/metrics](http://localhost:9191/metrics). A simple status page is served at the root `/`.
