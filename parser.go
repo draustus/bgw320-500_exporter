@@ -10,44 +10,40 @@ import (
 )
 
 type BroadbandStats struct {
-	ConnectionSource string
-	Connection       string
-	NetworkType      string
-	IPv4Address      string
-	GatewayAddress   string
-	MACAddress       string
-	PrimaryDNS       string
-	SecondaryDNS     string
-	MTU              int
-
-	EthernetLineState string
-	EthernetSpeed     float64 // in Mbps
-	EthernetDuplex    string
-
+	IPv6LinkLocal      string
+	Connection         string
+	NetworkType        string
+	IPv4Address        string
+	GatewayAddress     string
+	MACAddress         string
+	PrimaryDNS         string
+	SecondaryDNS       string
+	ConnectionSource   string
+	EthernetLineState  string
+	IPv6GatewayAddress string
+	EthernetDuplex     string
 	IPv6Status         string
 	IPv6ServiceType    string
 	IPv6Address        string
-	IPv6LinkLocal      string
-	IPv6GatewayAddress string
+	MTU                int
+	IPv4RxMulticast    float64
 	IPv6MTU            int
-
-	IPv4RxPackets   float64
-	IPv4TxPackets   float64
-	IPv4RxBytes     float64
-	IPv4TxBytes     float64
-	IPv4RxUnicast   float64
-	IPv4TxUnicast   float64
-	IPv4RxMulticast float64
-	IPv4TxMulticast float64
-	IPv4RxDrops     float64
-	IPv4TxDrops     float64
-	IPv4RxErrors    float64
-	IPv4TxErrors    float64
-	IPv4Collisions  float64
-
-	IPv6TxPackets  float64
-	IPv6TxErrors   float64
-	IPv6TxDiscards float64
+	IPv4RxPackets      float64
+	IPv4TxPackets      float64
+	IPv4RxBytes        float64
+	IPv4TxBytes        float64
+	IPv4RxUnicast      float64
+	IPv4TxUnicast      float64
+	EthernetSpeed      float64
+	IPv4TxMulticast    float64
+	IPv4RxDrops        float64
+	IPv4TxDrops        float64
+	IPv4RxErrors       float64
+	IPv4TxErrors       float64
+	IPv4Collisions     float64
+	IPv6TxPackets      float64
+	IPv6TxErrors       float64
+	IPv6TxDiscards     float64
 }
 
 type LANInterfaceStats struct {

@@ -12,108 +12,82 @@ import (
 )
 
 type BGWCollector struct {
-	gatewayURL string
-	client     *http.Client
-
-	// Descriptors
-	upDesc             *prometheus.Desc
-	scrapeDurationDesc *prometheus.Desc
-
-	// Broadband Info & Connection
-	broadbandStatusDesc *prometheus.Desc
-	broadbandInfoDesc   *prometheus.Desc
-	broadbandMtuDesc    *prometheus.Desc
-
-	// Broadband Ethernet
-	ethernetLineStateDesc *prometheus.Desc
-	ethernetSpeedDesc     *prometheus.Desc
-
-	// Broadband IPv4 Statistics
-	ipv4RxPacketsDesc   *prometheus.Desc
-	ipv4TxPacketsDesc   *prometheus.Desc
-	ipv4RxBytesDesc     *prometheus.Desc
-	ipv4TxBytesDesc     *prometheus.Desc
-	ipv4RxUnicastDesc   *prometheus.Desc
-	ipv4TxUnicastDesc   *prometheus.Desc
-	ipv4RxMulticastDesc *prometheus.Desc
-	ipv4TxMulticastDesc *prometheus.Desc
-	ipv4RxDropsDesc     *prometheus.Desc
-	ipv4TxDropsDesc     *prometheus.Desc
-	ipv4RxErrorsDesc    *prometheus.Desc
-	ipv4TxErrorsDesc    *prometheus.Desc
-	ipv4CollisionsDesc  *prometheus.Desc
-
-	// Broadband IPv6 Statistics
-	ipv6TxPacketsDesc  *prometheus.Desc
-	ipv6TxErrorsDesc   *prometheus.Desc
-	ipv6TxDiscardsDesc *prometheus.Desc
-
-	// LAN Info
-	lanInfoDesc *prometheus.Desc
-
-	// LAN Interfaces
+	broadbandErr             error
+	lanErr                   error
+	wifiTxBytesDesc          *prometheus.Desc
+	wifiClientTxBytesDesc    *prometheus.Desc
+	scrapeDurationDesc       *prometheus.Desc
+	broadbandStatusDesc      *prometheus.Desc
+	broadbandInfoDesc        *prometheus.Desc
+	broadbandMtuDesc         *prometheus.Desc
+	ethernetLineStateDesc    *prometheus.Desc
+	ethernetSpeedDesc        *prometheus.Desc
+	ipv4RxPacketsDesc        *prometheus.Desc
+	ipv4TxPacketsDesc        *prometheus.Desc
+	client                   *http.Client
+	ipv4TxBytesDesc          *prometheus.Desc
+	ipv4RxUnicastDesc        *prometheus.Desc
+	ipv4TxUnicastDesc        *prometheus.Desc
+	ipv4RxMulticastDesc      *prometheus.Desc
+	ipv4TxMulticastDesc      *prometheus.Desc
+	ipv4RxDropsDesc          *prometheus.Desc
+	ipv4TxDropsDesc          *prometheus.Desc
+	ipv4RxErrorsDesc         *prometheus.Desc
+	ipv4TxErrorsDesc         *prometheus.Desc
+	ipv4CollisionsDesc       *prometheus.Desc
+	ipv6TxPacketsDesc        *prometheus.Desc
+	ipv6TxErrorsDesc         *prometheus.Desc
+	ipv6TxDiscardsDesc       *prometheus.Desc
+	lanInfoDesc              *prometheus.Desc
 	lanInterfaceActiveDesc   *prometheus.Desc
 	lanInterfaceInactiveDesc *prometheus.Desc
 	lanInterfaceEnabledDesc  *prometheus.Desc
-
-	// LAN IPv4 Statistics
-	lanIpv4TxPacketsDesc  *prometheus.Desc
-	lanIpv4TxErrorsDesc   *prometheus.Desc
-	lanIpv4TxDiscardsDesc *prometheus.Desc
-	lanIpv4RxPacketsDesc  *prometheus.Desc
-	lanIpv4RxErrorsDesc   *prometheus.Desc
-	lanIpv4RxDiscardsDesc *prometheus.Desc
-
-	// LAN Wi-Fi
-	wifiRadioEnabledDesc *prometheus.Desc
-	wifiPowerLevelDesc   *prometheus.Desc
-	wifiTxBytesDesc      *prometheus.Desc
-	wifiRxBytesDesc      *prometheus.Desc
-	wifiTxPacketsDesc    *prometheus.Desc
-	wifiRxPacketsDesc    *prometheus.Desc
-	wifiTxErrorsDesc     *prometheus.Desc
-	wifiRxErrorsDesc     *prometheus.Desc
-	wifiTxDiscardsDesc   *prometheus.Desc
-	wifiRxDiscardsDesc   *prometheus.Desc
-
-	// LAN Wi-Fi Clients
-	wifiClientTxPacketsDesc *prometheus.Desc
-	wifiClientRxPacketsDesc *prometheus.Desc
-	wifiClientTxBytesDesc   *prometheus.Desc
-	wifiClientRxBytesDesc   *prometheus.Desc
-	wifiClientTxErrorsDesc  *prometheus.Desc
-	wifiClientSignalDesc    *prometheus.Desc
-	wifiClientDisassocDesc  *prometheus.Desc
-	wifiClientDeauthDesc    *prometheus.Desc
-
-	// LAN Ports
-	lanPortSpeedDesc       *prometheus.Desc
-	lanPortEnabledDesc     *prometheus.Desc
-	lanPortTxPacketsDesc   *prometheus.Desc
-	lanPortTxBytesDesc     *prometheus.Desc
-	lanPortTxUnicastDesc   *prometheus.Desc
-	lanPortTxMulticastDesc *prometheus.Desc
-	lanPortTxDroppedDesc   *prometheus.Desc
-	lanPortTxErrorsDesc    *prometheus.Desc
-	lanPortRxPacketsDesc   *prometheus.Desc
-	lanPortRxBytesDesc     *prometheus.Desc
-	lanPortRxUnicastDesc   *prometheus.Desc
-	lanPortRxMulticastDesc *prometheus.Desc
-	lanPortRxDroppedDesc   *prometheus.Desc
-	lanPortRxErrorsDesc    *prometheus.Desc
-
-	// Cache & concurrency
-	mu             sync.RWMutex
-	broadbandStats *BroadbandStats
-	lanStats       *LANStats
-	broadbandErr   error
-	lanErr         error
-	broadbandDur   time.Duration
-	lanDur         time.Duration
-
-	// Signal channels for initial scrapes (used for testing synchronization)
-	firstBroadbandDone chan struct{}
-	firstLANDone       chan struct{}
+	lanIpv4TxPacketsDesc     *prometheus.Desc
+	lanIpv4TxErrorsDesc      *prometheus.Desc
+	lanIpv4TxDiscardsDesc    *prometheus.Desc
+	lanIpv4RxPacketsDesc     *prometheus.Desc
+	lanIpv4RxErrorsDesc      *prometheus.Desc
+	lanIpv4RxDiscardsDesc    *prometheus.Desc
+	wifiTxPacketsDesc        *prometheus.Desc
+	wifiPowerLevelDesc       *prometheus.Desc
+	ipv4RxBytesDesc          *prometheus.Desc
+	upDesc                   *prometheus.Desc
+	wifiRadioEnabledDesc     *prometheus.Desc
+	wifiRxPacketsDesc        *prometheus.Desc
+	wifiTxErrorsDesc         *prometheus.Desc
+	wifiRxErrorsDesc         *prometheus.Desc
+	wifiTxDiscardsDesc       *prometheus.Desc
+	wifiRxDiscardsDesc       *prometheus.Desc
+	wifiClientTxPacketsDesc  *prometheus.Desc
+	wifiClientRxPacketsDesc  *prometheus.Desc
+	wifiRxBytesDesc          *prometheus.Desc
+	wifiClientRxBytesDesc    *prometheus.Desc
+	wifiClientTxErrorsDesc   *prometheus.Desc
+	wifiClientSignalDesc     *prometheus.Desc
+	wifiClientDisassocDesc   *prometheus.Desc
+	wifiClientDeauthDesc     *prometheus.Desc
+	lanPortSpeedDesc         *prometheus.Desc
+	lanPortEnabledDesc       *prometheus.Desc
+	lanPortTxPacketsDesc     *prometheus.Desc
+	lanPortTxBytesDesc       *prometheus.Desc
+	lanPortTxUnicastDesc     *prometheus.Desc
+	lanPortTxMulticastDesc   *prometheus.Desc
+	lanPortTxDroppedDesc     *prometheus.Desc
+	lanPortTxErrorsDesc      *prometheus.Desc
+	lanPortRxPacketsDesc     *prometheus.Desc
+	lanPortRxBytesDesc       *prometheus.Desc
+	lanPortRxUnicastDesc     *prometheus.Desc
+	lanPortRxMulticastDesc   *prometheus.Desc
+	lanPortRxDroppedDesc     *prometheus.Desc
+	lanPortRxErrorsDesc      *prometheus.Desc
+	broadbandStats           *BroadbandStats
+	lanStats                 *LANStats
+	firstLANDone             chan struct{}
+	firstBroadbandDone       chan struct{}
+	gatewayURL               string
+	lanDur                   time.Duration
+	broadbandDur             time.Duration
+	mu                       sync.RWMutex
 }
 
 func NewBGWCollector(gatewayURL string, timeout time.Duration) *BGWCollector {
